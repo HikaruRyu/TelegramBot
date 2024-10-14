@@ -1,121 +1,161 @@
+
+
 from typing import Final
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 
+# Declaración de constantes
 Token: Final = '7725937567:AAHohQsxDB1lO9-_MZX_rQ1lgnAMM095C1E'  # Token del bot
-BOT_USERNAME: Final = '@LaGuardiola_Bot'  # Nom del Bot
+BOT_USERNAME: Final = '@LaGuardiola_Bot'  # Nombre del Bot
+
+
+# Variables globales
+salary = 0  # Saldo actual
+ingresos = 0  # Ingresos totales
+estalvi = 0  # Estalvi
+despeses = 0  # Despeses totals
+quotes = 0  # Despeses mensuals fixes
+gastos_diaris = 0  # Despeses diàries
+ganancies_esporadiques = 0  # Ganàncies esporàdiques
+ganancies_mensuals = 0  # Ganàncies mensuals
+esperando_reserva = False  # Control de espera para la reserva
 
 
 # Comando /start
 async def start_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global salary # Saldo actual
-    global ingresos # Ingresos totals
-    ingresos = 0 # Ingresos totals
-    salary = ingresos
-    await update.message.reply_text('Hello, How can I help you?')
+    global salary, ingresos, estalvi, despeses, quotes, gastos_diaris, ganancies_esporadiques, ganancies_mensuals
+
+
+    # Inicialización de variables
+    estalvi = 0
+    despeses = quotes + gastos_diaris
+    ingresos = ganancies_esporadiques + ganancies_mensuals
+    salary = ingresos - despeses
+
+
+    await update.message.reply_text('¡Hola! ¿Cómo puedo ayudarte?')
+
+
+# Comando /reserva
+async def reserva_(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global estalvi
+    await update.message.reply_text(f'Tienes {estalvi}€ reservados para el ahorro.')
+
+
+async def introducir_reserva_(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global esperando_reserva
+    esperando_reserva = True
+    await update.message.reply_text('Introduce la cantidad que deseas reservar como ahorro.')
+
+
+async def manejar_reserva_(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global estalvi, esperando_reserva
+
+
+    if esperando_reserva:
+        try:
+            quantitat = float(update.message.text.replace('€', '').strip())
+            estalvi += quantitat  # Sumar a estalvi
+            esperando_reserva = False
+            await update.message.reply_text(f'Has reservado {quantitat}€ como ahorro. Total ahorrado: {estalvi}€.')
+        except ValueError:
+            await update.message.reply_text('Por favor, introduce una cantidad válida.')
 
 
 # Comando /help
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "/help\n"
-        "Aquí tens les comandes disponibles per al bot LA GUARDIOLA:\n"
-        "/saldo: Mostra el teu saldo actual.\n"
-        "/reserva: Consulta els diners que tens reservats per a l'estalvi.\n"
-        "/introduirReserva: Permet introduir i actualitzar la quantitat que vols reservar per a estalvi.\n"
-        "/despesses: Mostra el total de despeses acumulades.\n"
-        "/quotesMensuals: Visualitza les despeses fixes mensuals.\n"
-        "/introduirQuotesMensuals: Introdueix o actualitza les despeses mensuals.\n"
-        "/gastosDiaris: Consulta les teves despeses diàries.\n"
-        "/introduirGastosDiaris: Introdueix o actualitza les despeses diàries.\n"
-        "/ganancies: Mostra els ingressos totals que tens.\n"
-        "/introduirGananciesEsporadiques: Permet afegir ingressos esporàdics.\n"
-        "/introduirGananciesMensuals: Introdueix o actualitza les teves guanyances mensuals."
+        "Aquí tienes los comandos disponibles para el bot LA GUARDIOLA:\n"
+        "/saldo: Muestra tu saldo actual.\n"
+        "/reserva: Consulta los ahorros que tienes reservados.\n"
+        "/introduir_reserva: Permite introducir y actualizar la cantidad que quieres reservar como ahorro.\n"
+        "/despeses: Muestra el total de gastos acumulados.\n"
+        "/quotesMensuals: Visualiza los gastos fijos mensuales.\n"
+        "/introduirQuotesMensuals: Introduce o actualiza los gastos mensuales.\n"
+        "/gastosDiaris: Consulta tus gastos diarios.\n"
+        "/introduirGastosDiaris: Introduce o actualiza los gastos diarios.\n"
+        "/ganancies: Muestra los ingresos totales que tienes.\n"
+        "/introduirGananciesEsporadiques: Permite agregar ingresos esporádicos.\n"
+        "/introduirGananciesMensuals: Introduce o actualiza tus ganancias mensuales."
     )
     await update.message.reply_text(help_text)
 
 
 # Comando /saldo
 async def saldo_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Aquí puedes cambiar el valor por el saldo actual
-    await update.message.reply_text(f'El teu saldo actual és de {salary}€')
+    global salary
+    await update.message.reply_text(f'Tu saldo actual es de {salary}€.')
 
 
-# Comando /reserva
-async def reserva_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    estalvi = 300  # Aquí puedes cambiar el valor de l'estalvi
-    await update.message.reply_text(f'Has reservat {estalvi}€ per a l\'estalvi.')
-
-
-# Comando /introduirReserva
-async def introduir_reserva_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Aquí se podría añadir lógica para introducir una nova quantitat d'estalvi
-    await update.message.reply_text('Introduïu la quantitat d\'estalvi que voleu reservar.')
-
-
-# Comando /despesses
+# Comando /despeses
 async def despesses_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    despeses = 500  # Total despeses acumulades
-    await update.message.reply_text(f'El total de les teves despeses fins al moment és de {despeses}€.')
+    global despeses
+    await update.message.reply_text(f'El total de tus gastos hasta el momento es de {despeses}€.')
 
 
 # Comando /quotesMensuals
 async def quotes_mensuals_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    quotes = 200  # Despeses mensuals fixes
-    await update.message.reply_text(f'Les despeses mensuals fixes són de {quotes}€.')
+    global quotes
+    await update.message.reply_text(f'Los gastos mensuales fijos son de {quotes}€.')
 
 
 # Comando /introduirQuotesMensuals
 async def introduir_quotes_mensuals_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Aquí se puede implementar la introducción de nuevas quotes mensuals
-    await update.message.reply_text('Introduïu les noves quotes mensuals que voleu afegir.')
+    await update.message.reply_text('Introduce las nuevas cuotas mensuales que quieres agregar.')
 
 
 # Comando /gastosDiaris
 async def gastos_diaris_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    gastos_diaris = 50  # Despeses diàries
-    await update.message.reply_text(f'Les despeses diàries fins ara són de {gastos_diaris}€.')
+    global gastos_diaris
+    await update.message.reply_text(f'Los gastos diarios hasta ahora son de {gastos_diaris}€.')
 
 
 # Comando /introduirGastosDiaris
 async def introduir_gastos_diaris_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Aquí se puede implementar la introducción de nuevas despeses diàries
-    await update.message.reply_text('Introduïu una nova despesa diària.')
+    await update.message.reply_text('Introduce un nuevo gasto diario.')
 
 
 # Comando /ganancies
 async def ganancies_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f'Les teves ganàncies totals són de {ingresos}€.')
+    global ingresos
+    await update.message.reply_text(f'Tus ganancias totales son de {ingresos}€.')
 
 
 # Comando /introduirGananciesEsporadiques
 async def introduir_ganancies_esporadiques_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Aquí se puede implementar la introducción de ingressos esporàdics
-    await update.message.reply_text('Introduïu els ingressos esporàdics que voleu afegir.')
+    await update.message.reply_text('Introduce los ingresos esporádicos que quieres agregar.')
 
 
 # Comando /introduirGananciesMensuals
 async def introduir_ganancies_mensuals_(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Aquí se puede implementar la introducción de ingressos mensuals
-    await update.message.reply_text('Introduïu les ganàncies mensuals.')
+    await update.message.reply_text('Introduce las ganancias mensuales.')
 
 
-# Respostes
+# Respuestas
 def handle_response(text: str) -> str:
     processed: str = text.lower()
    
     if 'hello' in processed:
-        return 'Hey there!'
-    return 'I do not understand what you wrote'
+        return '¡Hola!'
+    return 'No entiendo lo que escribiste.'
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global esperando_reserva
+
+
     message_type: str = update.message.chat.type
     text: str = update.message.text
 
 
     print(f'User ({update.message.chat.id}) in {message_type} : "{text}"')
+
+
+    if esperando_reserva:
+        await manejar_reserva_(update, context)
+        return
 
 
     if message_type == 'group':
@@ -141,13 +181,13 @@ if __name__ == '__main__':
     app = Application.builder().token(Token).build()
 
 
-    # Comandes
+    # Comandos
     app.add_handler(CommandHandler('start', start_))
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(CommandHandler('saldo', saldo_))
     app.add_handler(CommandHandler('reserva', reserva_))
-    app.add_handler(CommandHandler('introduirReserva', introduir_reserva_))
-    app.add_handler(CommandHandler('despesses', despesses_))
+    app.add_handler(CommandHandler('introduir_reserva', introducir_reserva_))
+    app.add_handler(CommandHandler('despeses', despesses_))
     app.add_handler(CommandHandler('quotesMensuals', quotes_mensuals_))
     app.add_handler(CommandHandler('introduirQuotesMensuals', introduir_quotes_mensuals_))
     app.add_handler(CommandHandler('gastosDiaris', gastos_diaris_))
@@ -157,7 +197,7 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('introduirGananciesMensuals', introduir_ganancies_mensuals_))
 
 
-    # Respostes
+    # Respuestas
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
 
